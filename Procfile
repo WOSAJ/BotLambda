@@ -1,1 +1,1 @@
-web: java -jar target/LambdaBot.jar
+worker: java -jar LambdaBot.jar
