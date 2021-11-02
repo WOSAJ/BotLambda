@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+    id'application'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+}
+
+mainClassName = 'ds.wosaj.Main'
+
+version '1.0'
+
+group 'ds.wosaj'
+version '0.0.1 ALPHA'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://m2.dv8tion.net/releases"
+    }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation("net.dv8tion:JDA:4.3.0_277")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
