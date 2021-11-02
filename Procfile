@@ -1,1 +1,1 @@
-worker: java -jar LambdaBot.jar
+worker: java -jar BotLambda.jar
