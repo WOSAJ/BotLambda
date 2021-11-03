@@ -15,7 +15,7 @@ public class Main {
     static MessageListener lsn = new MessageListener();
     public static void main(String[] args) throws LoginException, InterruptedException {
 
-        jda = JDABuilder.createDefault("ODIyNDk3Nzg5MjkyMDUyNTYw.YFTIwg.7sP3fAXLj42SWWuneXd9y1T3vFc")
+        jda = JDABuilder.createDefault(System.getenv("TOKEN"))
                 .addEventListeners(lsn)
                 .build();
         jda.awaitReady();
@@ -27,13 +27,17 @@ public class Main {
             Message message = event.getMessage();
             String content = message.getContentRaw();
             if (!event.getAuthor().isBot()) {
-                if (content.startsWith("!ava")) {
+                if (content.equals("!ava")) {
                     String avatarUrl = event.getAuthor().getEffectiveAvatarUrl();
                     event.getTextChannel().sendMessage(avatarUrl).submit();
                 }
                 if (content.startsWith("!cube")) {
                     event.getTextChannel().sendMessage(String.format(":game_die::game_die:...\n%d",
                             Math.round(Math.random() * 5 + 1))).submit();
+                }
+                if (content.equals("!help")) {
+                    event.getTextChannel().sendMessage("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
+
                 }
             }
             {
