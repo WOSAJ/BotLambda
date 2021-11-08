@@ -2,40 +2,67 @@ package discord.wosaj;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.util.Date;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public class Main {
+
+    public static final String prefix = "$";
+    public static final Logger MAIN_LOGGER = Logger.getLogger("Main logs");
     static JDA jda;
-    static MessageListener lsn = new MessageListener();
-    public static void main(String[] args) throws LoginException, InterruptedException {
+
+    public static void main(String[] args) throws LoginException {
 
         jda = JDABuilder.createDefault(System.getenv("TOKEN"))
-                .addEventListeners(lsn)
+                .addEventListeners(new MessageListener())
+                .setStatus(OnlineStatus.ONLINE)
+                .setActivity(Activity.competing(prefix + "help for help"))
                 .build();
-        jda.awaitReady();
+        //jda.awaitReady();
 
+        jda.upsertCommand("help", "Sends a help page").queue();
     }
     static class MessageListener extends ListenerAdapter {
         @Override
-        public void onMessageReceived(MessageReceivedEvent event) {
+        public void onSlashCommand(@Nonnull SlashCommandEvent event) {
+            switch(event.getName()) {
+                case ("help"):
+                    event.reply("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
+                    break;
+                case ("cube"):
+                    event.reply(String.format(":game_die::game_die:...\n%d",
+                            Math.round(Math.random() * 5 + 1))).submit();
+                    break;
+                case ("ava"):
+                    event.reply(event.getUser().getEffectiveAvatarUrl() + "?size=1024").submit();
+                    break;
+            }
+        }
+
+        @Override
+        public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
             Message message = event.getMessage();
             String content = message.getContentRaw();
             if (!event.getAuthor().isBot()) {
-                if (content.equals("!ava")) {
+                if (content.equals(prefix + "ava")) {
                     String avatarUrl = event.getAuthor().getEffectiveAvatarUrl();
                     event.getTextChannel().sendMessage(avatarUrl).submit();
                 }
-                if (content.startsWith("!cube")) {
+                if (content.equals(prefix + "!cube")) {
                     event.getTextChannel().sendMessage(String.format(":game_die::game_die:...\n%d",
                             Math.round(Math.random() * 5 + 1))).submit();
                 }
-                if (content.equals("!help")) {
+                if (content.equals(prefix + "!help")) {
                     event.getTextChannel().sendMessage("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
 
                 }
@@ -54,6 +81,9 @@ public class Main {
                             ).submit();
             }
         }
+
     }
+
 }
+
 
