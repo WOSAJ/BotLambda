@@ -38,7 +38,7 @@ public class Main {
         public void onSlashCommand(@Nonnull SlashCommandEvent event) {
             switch(event.getName()) {
                 case ("help"):
-                    event.reply("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
+                    event.reply("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").setEphemeral(true).submit();
                     MAIN_LOGGER.info("Command executed: "
                             + event.getName()
                             + " with options: "
@@ -48,7 +48,7 @@ public class Main {
                     break;
                 case ("cube"):
                     event.reply(String.format(":game_die::game_die:...\n%d",
-                            Math.round(Math.random() * 5 + 1))).setEphemeral(true).submit();
+                            Math.round(Math.random() * 5 + 1))).submit();
                     MAIN_LOGGER.info("Command executed: "
                             + event.getName()
                             + " with options: "
