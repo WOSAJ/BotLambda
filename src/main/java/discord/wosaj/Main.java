@@ -28,9 +28,10 @@ public class Main {
                 .setStatus(OnlineStatus.ONLINE)
                 .setActivity(Activity.competing(prefix + "help for help"))
                 .build();
-        //jda.awaitReady();
 
         jda.upsertCommand("help", "Sends a help page").queue();
+        jda.upsertCommand("ava", "Sends your avatar").queue();
+        jda.upsertCommand("cube", "Sends random number from 1 to 6").queue();
     }
     static class MessageListener extends ListenerAdapter {
         @Override
@@ -38,13 +39,31 @@ public class Main {
             switch(event.getName()) {
                 case ("help"):
                     event.reply("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
+                    MAIN_LOGGER.info("Command executed: "
+                            + event.getName()
+                            + " with options: "
+                            + event.getOptions()
+                            + " by "
+                            + event.getUser());
                     break;
                 case ("cube"):
                     event.reply(String.format(":game_die::game_die:...\n%d",
-                            Math.round(Math.random() * 5 + 1))).submit();
+                            Math.round(Math.random() * 5 + 1))).setEphemeral(true).submit();
+                    MAIN_LOGGER.info("Command executed: "
+                            + event.getName()
+                            + " with options: "
+                            + event.getOptions()
+                            + " by "
+                            + event.getUser());
                     break;
                 case ("ava"):
                     event.reply(event.getUser().getEffectiveAvatarUrl() + "?size=1024").submit();
+                    MAIN_LOGGER.info("Command executed: "
+                            + event.getName()
+                            + " with options: "
+                            + event.getOptions()
+                            + " by "
+                            + event.getUser());
                     break;
             }
         }
@@ -58,11 +77,12 @@ public class Main {
                     String avatarUrl = event.getAuthor().getEffectiveAvatarUrl();
                     event.getTextChannel().sendMessage(avatarUrl).submit();
                 }
-                if (content.equals(prefix + "!cube")) {
+                if (content.equals(prefix + "cube")) {
                     event.getTextChannel().sendMessage(String.format(":game_die::game_die:...\n%d",
                             Math.round(Math.random() * 5 + 1))).submit();
+                    MAIN_LOGGER.info("Command executed: ");
                 }
-                if (content.equals(prefix + "!help")) {
+                if (content.equals(prefix + "help")) {
                     event.getTextChannel().sendMessage("**LAMBDA BOT COMMANDS**:\n !ava - your avatar\n !cube - returns random number from 1 to 6").submit();
 
                 }
