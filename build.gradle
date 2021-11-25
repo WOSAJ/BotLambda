@@ -23,6 +23,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
     implementation("net.dv8tion:JDA:4.3.0_277")
     implementation("com.google.code.gson:gson:2.8.9")
+    implementation ("org.reflections:reflections:0.10.2")
 }
 
 test {
