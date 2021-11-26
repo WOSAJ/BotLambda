@@ -23,7 +23,8 @@ public class Main {
     public static final Command[] commands = {
             new HelpCommand(),
             new RefreshCommand(),
-            new RefreshCommandGlobal()
+            new RefreshCommandGlobal(),
+            new DeleteCommand()
     };
 
     public static JDA jda;

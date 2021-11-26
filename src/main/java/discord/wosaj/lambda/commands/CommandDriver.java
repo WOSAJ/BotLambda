@@ -40,6 +40,7 @@ public class CommandDriver extends ListenerAdapter {
 
     public void registerCommand(@Nonnull Command command, @Nonnull Guild guild) {
         if (command.isSlash()) {
+            guild.retrieveCommands().queue(list -> {
                 CommandCreateAction action = guild.upsertCommand(
                         command.getName(),
                         command.getDescription()
