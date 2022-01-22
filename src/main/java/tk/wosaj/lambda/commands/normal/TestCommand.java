@@ -7,6 +7,9 @@ import tk.wosaj.lambda.commands.Argument;
 import tk.wosaj.lambda.commands.Command;
 import tk.wosaj.lambda.commands.RegisterCommand;
 
+import javax.annotation.Nonnull;
+
+@SuppressWarnings("unused")
 @RegisterCommand(byDefault = true)
 public class TestCommand implements Command {
     @Override
@@ -21,7 +24,7 @@ public class TestCommand implements Command {
 
     @Override
     public void execute(MessageReceivedEvent event) {
-        event.getMessage().reply(new MessageBuilder().append("sus").build()).queue();
+        event.getMessage().reply(new MessageBuilder().append("?test").build()).queue();
     }
 
     @Override
@@ -29,11 +32,13 @@ public class TestCommand implements Command {
         event.reply("sus").queue();
     }
 
+    @Nonnull
     @Override
     public String getName() {
         return "test";
     }
 
+    @Nonnull
     @Override
     public String getDescription() {
         return "sus";

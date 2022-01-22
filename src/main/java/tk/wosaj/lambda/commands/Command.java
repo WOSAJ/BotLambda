@@ -2,6 +2,9 @@ package tk.wosaj.lambda.commands;
 
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+
+import javax.annotation.Nonnull;
+
 @SuppressWarnings("all")
 public interface Command {
     default boolean isSlash() {
@@ -14,6 +17,8 @@ public interface Command {
     Argument[] getArguments();
     void execute(MessageReceivedEvent event);
     void executeAsSlash(SlashCommandEvent event);
+    @Nonnull
     String getName();
+    @Nonnull
     String getDescription();
 }

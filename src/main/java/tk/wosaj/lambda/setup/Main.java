@@ -1,18 +1,16 @@
 package tk.wosaj.lambda.setup;
 
-import tk.wosaj.lambda.commands.CommandManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import tk.wosaj.lambda.commands.Command;
+import tk.wosaj.lambda.commands.CommandManager;
 import tk.wosaj.lambda.commands.RegisterCommand;
-import tk.wosaj.lambda.commands.normal.TestCommand;
 
 import javax.security.auth.login.LoginException;
-import java.lang.annotation.Annotation;
-import java.util.Objects;
 
-public class Main {
+public final class Main {
 
     public static String defaultPrefix = "?";
     public static JDA bot;
@@ -34,5 +32,16 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
         bot.awaitReady();
+        updateCommands();
+    }
+
+    static void updateCommands() {
+        bot.getGuilds().forEach(guild -> guild.retrieveCommands().queue(commands -> commands.forEach(command -> {
+            for (Command annotatedCommand : CommandManager.getAnnotatedCommands()) {
+                if(annotatedCommand.getName().equals(command.getName())) continue;
+                if(annotatedCommand.getClass().getAnnotation(RegisterCommand.class).byDefault())
+                    manager.registerCommand(annotatedCommand, guild);
+            }
+        })));
     }
 }

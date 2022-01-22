@@ -9,11 +9,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.restaction.CommandCreateAction;
 import org.reflections.Reflections;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("unused")
@@ -57,7 +59,6 @@ public class CommandManager extends ListenerAdapter {
                 action.queue();
             }
             if(command.isNormal()) names.add(command.getName());
-            commands.add(command);
         });
     }
 
@@ -92,6 +93,7 @@ public class CommandManager extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(@Nonnull SlashCommandEvent event) {
+        System.out.println(commands);
         if (event.getGuild() != null) {
             for (Command command : commands) {
                 if(command.getName().equals(event.getName())) {
@@ -105,15 +107,16 @@ public class CommandManager extends ListenerAdapter {
     //REFACTOR Database prefix
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+        if(event.getMember() == null) return;
         String[] split = splitCommand(event.getMessage().getContentRaw(), defaultPrefix);
         if(split.length == 0) return;
         Command command = getForName(split[0]);
         if (command == null || !command.isNormal()) return;
-        for (String name : names) {
-            if (command.getName().equals(name)) {
-                command.execute(event);
-            }
+        if(event.getMember().getUser().isBot()) {
+            Commands.reply(event.getMessage(), "<:canceled:934419252495130744> F*ck you, bot!");
+            return;
         }
+        command.execute(event);
     }
 
     @Override
@@ -122,18 +125,11 @@ public class CommandManager extends ListenerAdapter {
     }
 
     @Nullable
-    protected Command getForName(String name) {
+    public Command getForName(String name) {
         for (Command command : commands) {
             if(name.equals(command.getName())) return command;
         }
         return null;
-    }
-
-    @Nonnull
-    public static String[] splitCommand(@Nonnull String content, @Nonnull String prefix) {
-        if(content.length() <= 0) return new String[0];
-        String withoutPrefix = content.substring(prefix.length());
-        return withoutPrefix.split(" ");
     }
 
     public void initRegisters() {
@@ -143,7 +139,7 @@ public class CommandManager extends ListenerAdapter {
             try {
                 Object instance = aClass.getConstructors()[0].newInstance();
                 if(!(instance instanceof Command)) throw new IllegalArgumentException();
-
+                commands.add((Command) aClass.getConstructors()[0].newInstance());
                 if(((RegisterCommand) aClass.getAnnotation(annotation)).byDefault()) {
                     defaultToReg.add(((Command) aClass.getConstructors()[0].newInstance()));
                 }
@@ -152,5 +148,48 @@ public class CommandManager extends ListenerAdapter {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void refresh(@Nonnull Guild guild) {
+        Reflections reflections = new Reflections();
+        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
+        classes.forEach(command1 -> {
+            try {
+                Object instance = command1.getConstructors()[0].newInstance();
+                if(!(instance instanceof Command)) throw new IllegalArgumentException();
+                registerCommand(((Command) instance), guild);
+            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public ArrayList<Command> getCommands() {
+        return commands;
+    }
+
+    @CheckReturnValue
+    @Nonnull
+    public static String[] splitCommand(@Nonnull String content, @Nonnull String prefix) {
+        if(content.length() <= 0) return new String[0];
+        String withoutPrefix = content.substring(prefix.length());
+        return withoutPrefix.split(" ");
+    }
+
+    @Nonnull
+    public static List<Command> getAnnotatedCommands() {
+        ArrayList<Command> commands = new ArrayList<>();
+        Set<Class<?>> classes = new Reflections().getTypesAnnotatedWith(RegisterCommand.class);
+        for (Class<?> aClass : classes) {
+            try {
+                Object instance = aClass.getConstructors()[0].newInstance();
+                if(!(instance instanceof Command)) throw new IllegalArgumentException();
+                commands.add((Command) instance);
+
+            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return commands;
     }
 }
