@@ -17,6 +17,7 @@ public final class Main {
     public static CommandManager manager;
 
     static {
+        System.out.println(System.getenv("JDBC_DATABASE_URL"));
         try {
             bot = JDABuilder.createDefault(System.getenv("TOKEN"))
                     .setStatus(OnlineStatus.ONLINE)
