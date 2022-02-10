@@ -1,11 +1,13 @@
-package tk.wosaj.lambda.database;
+package tk.wosaj.lambda.database.util;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
+import tk.wosaj.lambda.database.guild.GuildItem;
 
 import javax.annotation.Nonnull;
 import java.util.Properties;
+
 
 public final class SessionFactoryGenerator {
     private SessionFactoryGenerator() {}
@@ -15,9 +17,9 @@ public final class SessionFactoryGenerator {
         if (sessionFactory == null) {
             Properties properties = new Properties();
             properties.put("hibernate.connection.driver_class", "org.postgresql.Driver");
-            properties.put("hibernate.connection.url", System.getenv("DATABASE_URL"));
+            properties.put("hibernate.connection.url", System.getenv("JDBC_DATABASE_URL"));
             properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL10Dialect");
-            properties.put("show_sql", "true");
+            //properties.put("show_sql", "true");
             try {
                 Configuration configuration = new Configuration()
                         .addProperties(properties).addAnnotatedClass(GuildItem.class);

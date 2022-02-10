@@ -1,4 +1,4 @@
-package tk.wosaj.lambda.database;
+package tk.wosaj.lambda.database.guild;
 
 import java.util.List;
 

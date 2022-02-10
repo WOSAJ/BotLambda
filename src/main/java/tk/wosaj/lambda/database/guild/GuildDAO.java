@@ -1,11 +1,11 @@
-package tk.wosaj.lambda.database;
+package tk.wosaj.lambda.database.guild;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.util.List;
 
-import static tk.wosaj.lambda.database.SessionFactoryGenerator.getSessionFactory;
+import static tk.wosaj.lambda.database.util.SessionFactoryGenerator.getSessionFactory;
 
 public class GuildDAO implements IGuildDAO {
     @Override

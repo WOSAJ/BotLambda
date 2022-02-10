@@ -1,4 +1,4 @@
-package tk.wosaj.lambda.commands.normal;
+package tk.wosaj.lambda.commands.normal.moderator;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;

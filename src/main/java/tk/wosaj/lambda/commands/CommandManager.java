@@ -39,7 +39,10 @@ public class CommandManager extends ListenerAdapter {
     public void registerCommand(Command command, @Nonnull Guild guild) {
         guild.retrieveCommands().queue(list -> {
             for (net.dv8tion.jda.api.interactions.commands.Command command1 : list) {
-                if(command1.getName().equals(command.getName())) return;
+                if(command1.getName().equals(command.getName())) {
+                    System.out.println("Melon detected: " + command1.getName() + " == " + command.getName());
+                    return;
+                }
             }
 
             if(command.isSlash()) {
@@ -151,6 +154,7 @@ public class CommandManager extends ListenerAdapter {
     }
 
     public void refresh(@Nonnull Guild guild) {
+        initRegisters();
         Reflections reflections = new Reflections();
         Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
         classes.forEach(command1 -> {
