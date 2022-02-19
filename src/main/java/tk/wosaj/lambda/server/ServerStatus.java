@@ -1,6 +1,8 @@
 package tk.wosaj.lambda.server;
 
-public enum ServerStatus {
+import java.io.Serializable;
+
+public enum ServerStatus implements Serializable {
     ONLINE,
     LOADING,
     WAITING,

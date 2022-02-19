@@ -2,6 +2,7 @@ package tk.wosaj.lambda.server;
 
 import com.sun.net.httpserver.BasicAuthenticator;
 
+@SuppressWarnings("unused")
 public class CentralAuth extends BasicAuthenticator {
     public static final CentralAuth auth = new CentralAuth();
     private CentralAuth() {

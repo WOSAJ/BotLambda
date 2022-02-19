@@ -1,6 +1,6 @@
 package tk.wosaj.lambda.database.guild;
 
-import tk.wosaj.lambda.setup.Main;
+import tk.wosaj.lambda.Main;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

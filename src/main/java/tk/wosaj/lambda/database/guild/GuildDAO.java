@@ -2,47 +2,43 @@ package tk.wosaj.lambda.database.guild;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import tk.wosaj.lambda.database.util.SessionFactoryGenerator;
 
 import java.util.List;
 
-import static tk.wosaj.lambda.database.util.SessionFactoryGenerator.getSessionFactory;
-
-public class GuildDAO implements IGuildDAO {
-    @Override
+public class GuildDAO {
     public GuildItem get(String name) {
-        return getSessionFactory().openSession().get(GuildItem.class, name);
+        try(Session session = SessionFactoryGenerator.getSessionFactory().openSession()) {
+            return session.get(GuildItem.class, name);
+        }
     }
 
-    @Override
     public void save(GuildItem item) {
-        try (Session session = getSessionFactory().openSession()) {
-            Transaction transaction = session.beginTransaction();
-            session.save(item);
-            transaction.commit();
-        }
+        Session session = SessionFactoryGenerator.getSessionFactory().openSession();
+        Transaction tx1 = session.beginTransaction();
+        session.save(item);
+        tx1.commit();
+        session.close();
     }
 
-    @Override
     public void update(GuildItem item) {
-        try (Session session = getSessionFactory().openSession()) {
-            Transaction transaction = session.beginTransaction();
-            session.update(item);
-            transaction.commit();
-        }
+        Session session = SessionFactoryGenerator.getSessionFactory().openSession();
+        Transaction tx1 = session.beginTransaction();
+        session.update(item);
+        tx1.commit();
+        session.close();
     }
 
-    @Override
     public void delete(GuildItem item) {
-        try (Session session = getSessionFactory().openSession()) {
-            Transaction transaction = session.beginTransaction();
-            session.delete(item);
-            transaction.commit();
-        }
+        Session session = SessionFactoryGenerator.getSessionFactory().openSession();
+        Transaction tx1 = session.beginTransaction();
+        session.delete(item);
+        tx1.commit();
+        session.close();
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public List<GuildItem> getAll() {
-        return (List<GuildItem>) getSessionFactory().openSession().createQuery("FROM GuildItem").list();
+        return (List<GuildItem>)  SessionFactoryGenerator.getSessionFactory().openSession().createQuery("From GuildItem").list();
     }
 }

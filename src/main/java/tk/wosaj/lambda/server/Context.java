@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import javax.annotation.Nullable;
 
+@SuppressWarnings("unused")
 public abstract class Context {
     private String name;
     private HttpHandler handler;

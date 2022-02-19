@@ -3,13 +3,14 @@ package tk.wosaj.lambda.server;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpServer;
 import org.reflections.Reflections;
+import tk.wosaj.lambda.util.AutoSearchable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Contexts {
+public class Contexts implements AutoSearchable {
     public static final List<Context> contexts = new ArrayList<>();
     private static boolean initialized;
     public static void init() {

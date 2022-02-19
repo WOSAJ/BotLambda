@@ -3,197 +3,214 @@ package tk.wosaj.lambda.commands;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.restaction.CommandCreateAction;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tk.wosaj.lambda.database.guild.GuildItem;
+import tk.wosaj.lambda.database.guild.GuildService;
+import tk.wosaj.lambda.database.guild.GuildUtil;
+import tk.wosaj.lambda.util.AutoSearchable;
+import tk.wosaj.lambda.util.Exclude;
+import tk.wosaj.lambda.util.GuildDataSettings;
 
-import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public class CommandManager extends ListenerAdapter {
+public class CommandManager extends ListenerAdapter implements AutoSearchable {
+    private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
+    private static final Reflections reflections = new Reflections();
     private final JDA jda;
     private final String defaultPrefix;
-    protected final ArrayList<String> names = new ArrayList<>();
-    protected final ArrayList<Command> commands = new ArrayList<>();
-    protected final ArrayList<Command> defaultToReg = new ArrayList<>();
-    public static final Class<? extends Annotation> annotation = RegisterCommand.class;
+    private final List<Command>
+            commands = new ArrayList<>(),
+            normalCommands = new ArrayList<>(),
+            defaultCommands = new ArrayList<>();
 
-    public CommandManager(JDA jda, String defaultPrefix) {
+    public CommandManager(@Nonnull JDA jda, String defaultPrefix) {
         this.jda = jda;
         this.defaultPrefix = defaultPrefix;
+        initCommands();
+        updateNormalCommands();
+        updateDefaultCommands();
+        jda.addEventListener(this);
     }
 
-    public JDA getJDA() {
+    public JDA getJda() {
         return jda;
     }
 
-    public void registerCommand(Command command, @Nonnull Guild guild) {
-        guild.retrieveCommands().queue(list -> {
-            for (net.dv8tion.jda.api.interactions.commands.Command command1 : list) {
-                if(command1.getName().equals(command.getName())) {
-                    System.out.println("Melon detected: " + command1.getName() + " == " + command.getName());
-                    return;
-                }
-            }
+    public String getDefaultPrefix() {
+        return defaultPrefix;
+    }
 
-            if(command.isSlash()) {
-                CommandCreateAction action = guild.upsertCommand(
-                        command.getName(),
-                        command.getDescription()
-                );
-                if(command.hasArguments()) {
-                    for (Argument argument : command.getArguments()) {
-                        action = action.addOption(
-                                argument.getType(),
-                                argument.getName(),
-                                argument.getDescription(),
-                                !argument.isOptional());
+    public void initCommands() {
+        Set<Class<? extends Command>> classes = reflections.getSubTypesOf(Command.class);
+        root: for (Class<? extends Command> aClass : classes) {
+            try {
+                if(aClass.getAnnotation(Exclude.class) != null) {
+                    for (Class<? extends AutoSearchable> clazz : aClass.getAnnotation(Exclude.class)
+                            .value()) {
+                        if (clazz.getName().equals(getClass().getName())) continue root;
+                        break;
                     }
                 }
-                action.queue();
-            }
-            if(command.isNormal()) names.add(command.getName());
-        });
-    }
-
-    public void removeCommand(Command command, @Nonnull Guild guild) {
-        guild.retrieveCommands().queue(list -> {
-            for (net.dv8tion.jda.api.interactions.commands.Command command1 : list) {
-                if(command1.getName().equals(command.getName())) {
-                    guild.deleteCommandById(command1.getId()).queue();
-                    commands.remove(command);
-                    if(command.isNormal()) names.remove(command.getName());
-                }
-            }
-        });
-    }
-
-    public Set<Class<?>> registerByAnnotation(Guild guild) {
-        Reflections reflections = new Reflections();
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
-        for (Class<?> aClass : classes) {
-            try {
-                Object instance = aClass.getConstructors()[0].newInstance();
-                if(instance instanceof Command) {
-                    Command command = (Command) instance;
-                    registerCommand(command, guild);
-                } else throw new IllegalArgumentException();
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+                commands.add(aClass.newInstance());
+                logger.debug("Added command: {}", aClass.getName());
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        return classes;
+    }
+
+    private void updateNormalCommands() {
+        normalCommands.clear();
+        normalCommands.addAll(commands.stream().filter(Command::isNormal).collect(Collectors.toList()));
+    }
+
+    private void updateDefaultCommands() {
+        defaultCommands.clear();
+        defaultCommands.addAll(commands.stream().filter(Command::byDefault).collect(Collectors.toList()));
+    }
+
+    public void registerCommand(@Nonnull Command command, Guild guild) {
+        if (!command.isSlash()) return;
+        guild.retrieveCommands().queue(list -> {
+            if (list.stream()
+                .map(net.dv8tion.jda.api.interactions.commands.Command::getName)
+                .collect(Collectors.toList()).contains(command.getName())) return;
+            CommandCreateAction action = guild.upsertCommand(command.getName(), command.getDescription());
+            for (Argument argument : command.getArguments()) {
+                action = action.addOption(
+                    argument.getType(),
+                    argument.getName(),
+                    argument.getDescription(),
+                    !argument.isOptional());
+            }
+            action.queue();
+        });
+    }
+
+    public void removeCommand(@Nonnull Guild guild, String commandName) {
+        guild.retrieveCommands().queue(list -> {
+            for (net.dv8tion.jda.api.interactions.commands.Command command : list) {
+                if (command.getName().equals(commandName)) {
+                    guild.deleteCommandById(command.getId()).queue();
+                    return;
+                }
+            }
+        });
     }
 
     @Override
     public void onSlashCommand(@Nonnull SlashCommandEvent event) {
-        System.out.println(commands);
-        if (event.getGuild() != null) {
-            for (Command command : commands) {
-                if(command.getName().equals(event.getName())) {
-                    command.executeAsSlash(event);
-                    break;
+        new Thread(() -> {
+            try {
+                for (Command command : commands) {
+                    if(command.getName().equals(event.getName())) {
+                        event.deferReply(command.ephemeral).setEphemeral(command.ephemeral).queue();
+                            ArrayList<String> blacklistCommands = GuildDataSettings.loadFromJson(
+                                new GuildService().get(
+                                    GuildUtil.generateDatabaseName(
+                                         Objects.requireNonNull(
+                                             event.getGuild()
+                                         ).getId())).getJson()
+                            ).blacklistCommands;
+                            for (String blacklistCommand : blacklistCommands)
+                                if(blacklistCommand.equals(event.getName())) {
+                                    event.getHook().sendMessage(
+                                        "<:canceled:934419252495130744> Command disabled")
+                                        .setEphemeral(true).queue();
+                                    return;
+                                }
+                            command.executeAsSlash(event);
+                    return;
+                    }
                 }
+            } catch(Exception e) {
+                logger.error(e.getMessage(), e);
             }
-        }
+            event.reply("Unknown error").setEphemeral(true).queue();
+        }).start();
     }
 
-    //REFACTOR Database prefix
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getMember() == null) return;
-        String[] split = splitCommand(event.getMessage().getContentRaw(), defaultPrefix);
-        if(split.length == 0) return;
-        Command command = getForName(split[0]);
-        if (command == null || !command.isNormal()) return;
-        if(event.getMember().getUser().isBot()) {
-            Commands.reply(event.getMessage(), "<:canceled:934419252495130744> F*ck you, bot!");
-            return;
-        }
-        command.execute(event);
+        new Thread(() -> {
+            try {
+                for (Command command : normalCommands) {
+                    if (event.getMessage().getContentRaw().startsWith(defaultPrefix + command.getName())) {
+                        ArrayList<String> blacklistCommands = GuildDataSettings.loadFromJson(
+                            new GuildService().get(
+                                GuildUtil.generateDatabaseName(
+                                    Objects.requireNonNull(
+                                            event.getGuild()
+                                    ).getId())).getJson()
+                        ).blacklistCommands;
+                        for (String blacklistCommand : blacklistCommands)
+                            if (blacklistCommand.equals(command.getName())) return;
+                        command.execute(event);
+                    }
+                    break;
+                }
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+        }).start();
     }
 
     @Override
     public void onGuildJoin(@Nonnull GuildJoinEvent event) {
-        defaultToReg.forEach(command -> registerCommand(command, event.getGuild()));
-    }
-
-    @Nullable
-    public Command getForName(String name) {
-        for (Command command : commands) {
-            if(name.equals(command.getName())) return command;
-        }
-        return null;
-    }
-
-    public void initRegisters() {
-        Reflections reflections = new Reflections();
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
-        for (Class<?> aClass : classes) {
+        new Thread(() -> {
             try {
-                Object instance = aClass.getConstructors()[0].newInstance();
-                if(!(instance instanceof Command)) throw new IllegalArgumentException();
-                commands.add((Command) aClass.getConstructors()[0].newInstance());
-                if(((RegisterCommand) aClass.getAnnotation(annotation)).byDefault()) {
-                    defaultToReg.add(((Command) aClass.getConstructors()[0].newInstance()));
+                GuildDataSettings settings = new GuildDataSettings(event.getGuild());
+                if(event.getGuild().getCommunityUpdatesChannel() != null) {
+                    settings.techChannel = event.getGuild().getCommunityUpdatesChannel().getId();
                 }
+                GuildService service = new GuildService();
+                service.save(
+                        new GuildItem(GuildUtil.generateDatabaseName(event.getGuild().getId()), settings)
+                );
 
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
-                e.printStackTrace();
+                defaultCommands.forEach(command -> registerCommand(command, event.getGuild()));
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
-        }
+        }).start();
     }
 
-    public void refresh(@Nonnull Guild guild) {
-        initRegisters();
-        Reflections reflections = new Reflections();
-        Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotation);
-        classes.forEach(command1 -> {
+    @Override
+    public void onGuildLeave(@Nonnull GuildLeaveEvent event) {
+        new Thread(() -> {
             try {
-                Object instance = command1.getConstructors()[0].newInstance();
-                if(!(instance instanceof Command)) throw new IllegalArgumentException();
-                registerCommand(((Command) instance), guild);
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
-                e.printStackTrace();
+                GuildService service = new GuildService();
+                GuildItem item = service.get(GuildUtil.generateDatabaseName(event.getGuild().getId()));
+                logger.info(service.get(GuildUtil.generateDatabaseName(event.getGuild().getId())).toString());
+                service.delete(item);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
             }
-        });
+        }).start();
     }
 
-    public ArrayList<Command> getCommands() {
+    public List<Command> getCommands() {
         return commands;
     }
 
-    @CheckReturnValue
-    @Nonnull
-    public static String[] splitCommand(@Nonnull String content, @Nonnull String prefix) {
-        if(content.length() <= 0) return new String[0];
-        String withoutPrefix = content.substring(prefix.length());
-        return withoutPrefix.split(" ");
+    public List<Command> getNormalCommands() {
+        return normalCommands;
     }
 
-    @Nonnull
-    public static List<Command> getAnnotatedCommands() {
-        ArrayList<Command> commands = new ArrayList<>();
-        Set<Class<?>> classes = new Reflections().getTypesAnnotatedWith(RegisterCommand.class);
-        for (Class<?> aClass : classes) {
-            try {
-                Object instance = aClass.getConstructors()[0].newInstance();
-                if(!(instance instanceof Command)) throw new IllegalArgumentException();
-                commands.add((Command) instance);
-
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-        return commands;
+    public List<Command> getDefaultCommands() {
+        return defaultCommands;
     }
 }

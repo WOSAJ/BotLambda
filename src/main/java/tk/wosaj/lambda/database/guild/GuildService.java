@@ -2,30 +2,29 @@ package tk.wosaj.lambda.database.guild;
 
 import java.util.List;
 
-public class GuildService implements IGuildDAO {
+public class GuildService {
     private final GuildDAO dao = new GuildDAO();
 
-    @Override
     public GuildItem get(String name) {
         return dao.get(name);
     }
 
-    @Override
-    public void save(GuildItem item) {
+    public GuildItem byId(String guildId) {
+        return get(GuildUtil.generateDatabaseName(guildId));
+    }
+
+    public synchronized void save(GuildItem item) {
         dao.save(item);
     }
 
-    @Override
-    public void update(GuildItem item) {
+    public synchronized void update(GuildItem item) {
         dao.update(item);
     }
 
-    @Override
-    public void delete(GuildItem item) {
+    public synchronized void delete(GuildItem item) {
         dao.delete(item);
     }
 
-    @Override
     public List<GuildItem> getAll() {
         return dao.getAll();
     }

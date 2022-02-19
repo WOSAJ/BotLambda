@@ -16,10 +16,11 @@ public final class SessionFactoryGenerator {
     public static SessionFactory getSessionFactory() {
         if (sessionFactory == null) {
             Properties properties = new Properties();
+            properties.put("java.util.logging.ConsoleHandler.level", "FATAL");
             properties.put("hibernate.connection.driver_class", "org.postgresql.Driver");
             properties.put("hibernate.connection.url", System.getenv("JDBC_DATABASE_URL"));
             properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL10Dialect");
-            //properties.put("show_sql", "true");
+            properties.put("show_sql", "false");
             try {
                 Configuration configuration = new Configuration()
                         .addProperties(properties).addAnnotatedClass(GuildItem.class);

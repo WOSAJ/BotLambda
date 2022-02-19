@@ -1,12 +1,13 @@
 package tk.wosaj.lambda.server.contexts;
 
 import com.sun.net.httpserver.Authenticator;
+import tk.wosaj.lambda.Main;
 import tk.wosaj.lambda.server.Context;
-import tk.wosaj.lambda.setup.Main;
 
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+@SuppressWarnings("all")
 public class StatusContext extends Context {
     public StatusContext() {
         super("/ping", httpExchange -> {
