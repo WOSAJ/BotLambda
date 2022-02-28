@@ -1,3 +1,2 @@
 # BotLambda
-Lambda - Discord Bot by WOSAJ\
-**THIS IS A TEST BOT, DO NOT TAKE IT SERIOUSLY, IT WAS CREATED TO STUDY THE WORK OF THE LIBRARY AND IS NOT INTENDED FOR MASS USE!**
+Lambda - an open source bot that allows you to write custom commands using JS
