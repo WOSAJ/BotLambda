@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Contexts implements AutoSearchable {
+public final class Contexts implements AutoSearchable {
     public static final List<Context> contexts = new ArrayList<>();
     private static boolean initialized;
     public static void init() {

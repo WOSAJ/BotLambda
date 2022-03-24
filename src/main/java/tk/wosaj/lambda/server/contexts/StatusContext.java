@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("all")
-public class StatusContext extends Context {
+public final class StatusContext extends Context {
     public StatusContext() {
         super("/ping", httpExchange -> {
             try(OutputStream outputStream = httpExchange.getResponseBody()) {

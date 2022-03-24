@@ -39,6 +39,6 @@ public class GuildDAO {
 
     @SuppressWarnings("unchecked")
     public List<GuildItem> getAll() {
-        return (List<GuildItem>)  SessionFactoryGenerator.getSessionFactory().openSession().createQuery("From GuildItem").list();
+        return (List<GuildItem>) SessionFactoryGenerator.getSessionFactory().openSession().createQuery("From GuildItem").list();
     }
 }

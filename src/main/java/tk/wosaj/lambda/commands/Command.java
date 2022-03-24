@@ -1,7 +1,9 @@
 package tk.wosaj.lambda.commands;
 
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import tk.wosaj.lambda.util.JSONSerializable;
+import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -9,18 +11,26 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class Command {
+@SuppressWarnings("unused")
+public abstract class Command implements JSONSerializable {
     protected final String name;
     protected final String description;
     protected final List<Argument> arguments = new ArrayList<>();
     protected final List<CommandProperty> properties = new ArrayList<>();
     protected final boolean isNormal = true, isSlash = true, byDefault = true, ephemeral;
+    protected final Strainer policy;
+    protected boolean gc;
 
-    public Command(String name, String description, boolean ephemeral, Argument... arguments) {
+    public Command(String name, String description, boolean ephemeral, Strainer policy, Argument... arguments) {
         this.name = name;
         this.description = description;
         this.ephemeral = ephemeral;
+        this.policy = policy;
         if (arguments != null) this.arguments.addAll(Arrays.stream(arguments).collect(Collectors.toList()));
+    }
+
+    public Command(String name, String description, boolean ephemeral, Argument... arguments) {
+        this(name, description, ephemeral, Strainer.PUBLIC, arguments);
     }
 
     public String getName() {
@@ -59,21 +69,34 @@ public abstract class Command {
         return ephemeral;
     }
 
-    protected void reply(@Nonnull SlashCommandEvent event, String content) {
-        if (content == null) return;
-        event.getHook().sendMessage(content).setEphemeral(ephemeral).queue();
+    public Strainer getPolicy() {
+        return policy;
     }
 
-    protected void reply(@Nonnull MessageReceivedEvent event, String content) {
-        if (content == null) return;
-        event.getMessage().reply(content).queue();
-    }
-
-    public abstract void execute(MessageReceivedEvent event);
-    public abstract void executeAsSlash(SlashCommandEvent event);
+    public abstract void execute(@Nonnull MessageReceivedEvent event);
+    public abstract void executeAsSlash(@Nonnull SlashCommandInteractionEvent event);
 
     @Nonnull
     public static String[] splitMessage(@Nonnull String message) {
         return message.split(" ");
+    }
+
+    protected void reply(@Nonnull SlashCommandInteractionEvent event, String content) {
+        if (content == null) return;
+        event.getHook().sendMessage(content).setEphemeral(ephemeral).queue();
+    }
+
+    public static void reply(@Nonnull SlashCommandInteractionEvent event, String content, boolean ephemeral) {
+        if (content == null) return;
+        event.getHook().sendMessage(content).setEphemeral(ephemeral).queue();
+    }
+
+    public static void reply(@Nonnull MessageReceivedEvent event, String content) {
+        if (content == null) return;
+        event.getMessage().reply(content).queue();
+    }
+
+    public boolean requireGC() {
+        return gc;
     }
 }

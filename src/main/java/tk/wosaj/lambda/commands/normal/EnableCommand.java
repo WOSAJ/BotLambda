@@ -1,6 +1,6 @@
 package tk.wosaj.lambda.commands.normal;
 
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import tk.wosaj.lambda.Main;
@@ -9,24 +9,32 @@ import tk.wosaj.lambda.commands.Command;
 import tk.wosaj.lambda.database.guild.GuildItem;
 import tk.wosaj.lambda.database.guild.GuildService;
 import tk.wosaj.lambda.util.GuildDataSettings;
+import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@DisableCommand.AlwaysEnabled
 @SuppressWarnings("unused")
-public class EnableCommand extends Command {
+public final class EnableCommand extends Command {
     public EnableCommand() {
-        super("enable", "Enables disabled command",true, new Argument(
-                OptionType.STRING,
-                "command-name",
-                "Name of command",
-                false));
+        super(
+                "enable",
+                "Enables disabled command",
+                true,
+                Strainer.ADMIN,
+                new Argument(
+                    OptionType.STRING,
+                    "command-name",
+                    "Name of command",
+                    false)
+        );
     }
 
     @Override
-    public void execute(MessageReceivedEvent event) {
+    public void execute(@Nonnull MessageReceivedEvent event) {
         GuildService service = new GuildService();
         GuildItem item = service.byId(event.getGuild().getId());
         GuildDataSettings settings = GuildDataSettings.loadFromJson(item.getJson());
@@ -50,7 +58,7 @@ public class EnableCommand extends Command {
     }
 
     @Override
-    public void executeAsSlash(@Nonnull SlashCommandEvent event) {
+    public void executeAsSlash(@Nonnull SlashCommandInteractionEvent event) {
         GuildService service = new GuildService();
         GuildItem item = service.byId(Objects.requireNonNull(event.getGuild()).getId());
         GuildDataSettings settings = GuildDataSettings.loadFromJson(item.getJson());

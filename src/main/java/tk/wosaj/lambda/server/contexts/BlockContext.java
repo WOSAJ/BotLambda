@@ -6,11 +6,10 @@ import tk.wosaj.lambda.server.CentralAuth;
 import tk.wosaj.lambda.server.Context;
 import tk.wosaj.lambda.server.ServerStatus;
 
-import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("unused")
-public class BlockContext extends Context {
+public final class BlockContext extends Context {
     public BlockContext() {
         super("/block", httpExchange -> {
             if(Main.status == ServerStatus.BLOCKED) {
@@ -30,7 +29,6 @@ public class BlockContext extends Context {
         });
     }
 
-    @Nullable
     @Override
     public Authenticator getAuthenticator() {
         return CentralAuth.AdminAuth.auth;

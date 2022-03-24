@@ -4,25 +4,29 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.restaction.CommandCreateAction;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tk.wosaj.lambda.Main;
 import tk.wosaj.lambda.database.guild.GuildItem;
 import tk.wosaj.lambda.database.guild.GuildService;
 import tk.wosaj.lambda.database.guild.GuildUtil;
 import tk.wosaj.lambda.util.AutoSearchable;
 import tk.wosaj.lambda.util.Exclude;
 import tk.wosaj.lambda.util.GuildDataSettings;
+import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
@@ -35,6 +39,15 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
             commands = new ArrayList<>(),
             normalCommands = new ArrayList<>(),
             defaultCommands = new ArrayList<>();
+    private final ExecutorService executor = Executors.newFixedThreadPool(32,
+            r -> {
+                Thread thread = new Thread(r);
+                thread.setUncaughtExceptionHandler((t, e) -> {
+                    if(!(e instanceof IllegalMonitorStateException))
+                        LoggerFactory.getLogger(t.getName()).error("Exception in thread " + t.getName(), t);
+                });
+                return thread;
+            });
 
     public CommandManager(@Nonnull JDA jda, String defaultPrefix) {
         this.jda = jda;
@@ -60,7 +73,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                 if(aClass.getAnnotation(Exclude.class) != null) {
                     for (Class<? extends AutoSearchable> clazz : aClass.getAnnotation(Exclude.class)
                             .value()) {
-                        if (clazz.getName().equals(getClass().getName())) continue root;
+                        if (!clazz.getName().equals(getClass().getName())) continue root;
                         break;
                     }
                 }
@@ -112,13 +125,14 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
     }
 
     @Override
-    public void onSlashCommand(@Nonnull SlashCommandEvent event) {
-        new Thread(() -> {
+    public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
+        if (event.getMember() == null) return;
+        executor.submit(() -> {
             try {
                 for (Command command : commands) {
                     if(command.getName().equals(event.getName())) {
                         event.deferReply(command.ephemeral).setEphemeral(command.ephemeral).queue();
-                            ArrayList<String> blacklistCommands = GuildDataSettings.loadFromJson(
+                            List<String> blacklistCommands = GuildDataSettings.loadFromJson(
                                 new GuildService().get(
                                     GuildUtil.generateDatabaseName(
                                          Objects.requireNonNull(
@@ -128,49 +142,87 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                             for (String blacklistCommand : blacklistCommands)
                                 if(blacklistCommand.equals(event.getName())) {
                                     event.getHook().sendMessage(
-                                        "<:canceled:934419252495130744> Command disabled")
+                                         Main.emotes.get("canceled") + " Command disabled")
                                         .setEphemeral(true).queue();
                                     return;
                                 }
-                            command.executeAsSlash(event);
-                    return;
+                        boolean destroy = false;
+                        switch (command.getPolicy()) {
+                            case ADMIN:
+                                destroy = !Strainer.admin(event.getMember());
+                                break;
+                            case MODERATOR:
+                                destroy = !Strainer.moderator(event.getMember());
+                                break;
+                        }
+                        if(destroy) {
+                            Command.reply(event, Main.emotes.get("canceled") + " You cant use it!", true);
+                            return;
+                        }
+                        command.executeAsSlash(event);
+                        if(command.requireGC()) System.gc();
+                        return;
                     }
                 }
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
             }
             event.reply("Unknown error").setEphemeral(true).queue();
-        }).start();
+        });
     }
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        new Thread(() -> {
+        if(event.getAuthor().isBot()) return;
+        if(event.getMember() == null) {
+            logger.debug("Nullable return");
+            return;
+        }
+        executor.submit(() -> {
+            String prefix = defaultPrefix;
+            GuildDataSettings settings = GuildDataSettings.load(event.getGuild().getId());
+            if(settings.prefix != null) {
+                prefix = settings.prefix;
+            }
             try {
                 for (Command command : normalCommands) {
-                    if (event.getMessage().getContentRaw().startsWith(defaultPrefix + command.getName())) {
-                        ArrayList<String> blacklistCommands = GuildDataSettings.loadFromJson(
-                            new GuildService().get(
-                                GuildUtil.generateDatabaseName(
-                                    Objects.requireNonNull(
-                                            event.getGuild()
-                                    ).getId())).getJson()
-                        ).blacklistCommands;
-                        for (String blacklistCommand : blacklistCommands)
-                            if (blacklistCommand.equals(command.getName())) return;
+                    if (event.getMessage().getContentRaw().startsWith(prefix + command.getName())) {
+                        for (String blacklistCommand : settings.blacklistCommands)
+                            if (blacklistCommand.equals(command.getName())) {
+                                logger.debug("Blacklisted return");
+                                return;
+                            }
+                        boolean destroy = false;
+
+                        switch (command.getPolicy()) {
+                            case ADMIN:
+                                destroy = !Strainer.admin(event.getMember());
+                                break;
+                            case MODERATOR:
+                                destroy = !Strainer.moderator(event.getMember());
+                                break;
+                        }
+                        if (destroy) {
+                            Command.reply(event, Main.emotes.get("canceled") + " You cant use it!");
+                            return;
+                        }
                         command.execute(event);
+                        if(command.requireGC()) System.gc();
+                        break;
                     }
-                    break;
                 }
+            } catch (ArrayIndexOutOfBoundsException ignored) {
+                Command.reply(event, Main.emotes.get("canceled") + " Invalid arguments");
+                //TODO Automatic help print
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-        }).start();
+        });
     }
 
     @Override
     public void onGuildJoin(@Nonnull GuildJoinEvent event) {
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 GuildDataSettings settings = new GuildDataSettings(event.getGuild());
                 if(event.getGuild().getCommunityUpdatesChannel() != null) {
@@ -185,12 +237,12 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-        }).start();
+        });
     }
 
     @Override
     public void onGuildLeave(@Nonnull GuildLeaveEvent event) {
-        new Thread(() -> {
+        executor.submit(() -> {
             try {
                 GuildService service = new GuildService();
                 GuildItem item = service.get(GuildUtil.generateDatabaseName(event.getGuild().getId()));
@@ -199,7 +251,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
-        }).start();
+        });
     }
 
     public List<Command> getCommands() {
@@ -212,5 +264,9 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
 
     public List<Command> getDefaultCommands() {
         return defaultCommands;
+    }
+
+    public void shutdown() {
+        if(!executor.isShutdown()) executor.shutdown();
     }
 }
