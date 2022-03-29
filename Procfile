@@ -1,1 +1,1 @@
-web: -jar BotLambda.jar
+web: java -jar BotLambda.jar
