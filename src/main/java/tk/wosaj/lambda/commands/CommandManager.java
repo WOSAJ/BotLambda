@@ -179,7 +179,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                             if (blacklistCommand.equals(command.getName())) {
                                 return;
                             }
-                        if (command.getAccepter().check(event.getMember())) {
+                        if (!command.getAccepter().check(event.getMember())) {
                             Command.reply(event, Main.emotes.get("canceled") + " You cant use it!");
                             return;
                         }

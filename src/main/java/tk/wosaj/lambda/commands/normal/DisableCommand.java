@@ -64,6 +64,7 @@ public final class DisableCommand extends Command {
             service.update(item);
             Main.manager.removeCommand(event.getGuild(), asString);
             reply(event, Main.emotes.get("accepted") + " Command Successfully disabled!");
+            return;
         }
         reply(event, Main.emotes.get("canceled") + " Can't find command!");
     }

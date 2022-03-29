@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import tk.wosaj.lambda.Main;
 import tk.wosaj.lambda.commands.Argument;
 import tk.wosaj.lambda.commands.Command;
+import tk.wosaj.lambda.util.Accepter;
 import tk.wosaj.lambda.util.GuildDataSettings;
 
 import javax.annotation.Nonnull;
@@ -20,6 +21,7 @@ public final class JSRunCommand extends Command {
     }
     public JSRunCommand() {
         super("js", "Run js command script");
+        accepter = Accepter.ADMIN;
         arguments.add(new Argument(OptionType.STRING, "script", "JS script to run", false));
     }
 
