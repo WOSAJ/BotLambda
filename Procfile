@@ -1,1 +1,1 @@
-web: java -jar BotLambda.jar
+web: java -Xms512M -Xmx1024M -jar BotLambda.jar
