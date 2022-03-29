@@ -30,8 +30,6 @@ test {
     useJUnitPlatform()
 }
 
-jar {
-    manifest {
-        attributes "Main-Class": "tk.wosaj.lambda.Main"
-    }
+task stage {
+    mustRunAfter(clean)
 }
