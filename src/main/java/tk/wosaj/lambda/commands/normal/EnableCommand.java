@@ -8,8 +8,8 @@ import tk.wosaj.lambda.commands.Argument;
 import tk.wosaj.lambda.commands.Command;
 import tk.wosaj.lambda.database.guild.GuildItem;
 import tk.wosaj.lambda.database.guild.GuildService;
+import tk.wosaj.lambda.util.Accepter;
 import tk.wosaj.lambda.util.GuildDataSettings;
-import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -20,17 +20,10 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public final class EnableCommand extends Command {
     public EnableCommand() {
-        super(
-                "enable",
-                "Enables disabled command",
-                true,
-                Strainer.ADMIN,
-                new Argument(
-                    OptionType.STRING,
-                    "command-name",
-                    "Name of command",
-                    false)
-        );
+        super("enable", "Enables disabled command");
+        arguments.add(new Argument(OptionType.STRING, "command-name", "Name of command", false));
+        ephemeral = true;
+        accepter = Accepter.ADMIN;
     }
 
     @Override

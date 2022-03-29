@@ -2,35 +2,27 @@ package tk.wosaj.lambda.commands;
 
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import tk.wosaj.lambda.util.Accepter;
 import tk.wosaj.lambda.util.JSONSerializable;
 import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public abstract class Command implements JSONSerializable {
     protected final String name;
     protected final String description;
     protected final List<Argument> arguments = new ArrayList<>();
-    protected final List<CommandProperty> properties = new ArrayList<>();
-    protected final boolean isNormal = true, isSlash = true, byDefault = true, ephemeral;
-    protected final Strainer policy;
+    protected final boolean isNormal = true, isSlash = true, byDefault = true;
+    protected boolean ephemeral;
+    @Deprecated protected Strainer policy;
+    protected Accepter accepter;
     protected boolean gc;
-
-    public Command(String name, String description, boolean ephemeral, Strainer policy, Argument... arguments) {
+    public Command(String name, String description) {
         this.name = name;
         this.description = description;
-        this.ephemeral = ephemeral;
-        this.policy = policy;
-        if (arguments != null) this.arguments.addAll(Arrays.stream(arguments).collect(Collectors.toList()));
-    }
-
-    public Command(String name, String description, boolean ephemeral, Argument... arguments) {
-        this(name, description, ephemeral, Strainer.PUBLIC, arguments);
     }
 
     public String getName() {
@@ -57,20 +49,17 @@ public abstract class Command implements JSONSerializable {
         return byDefault;
     }
 
-    public List<CommandProperty> getProperties() {
-        return properties;
-    }
-
-    public void initProperties(@Nonnull CommandSettings target) {
-       properties.forEach(target::addProperty);
-    }
-
     public boolean isEphemeral() {
         return ephemeral;
     }
 
+    @Deprecated
     public Strainer getPolicy() {
         return policy;
+    }
+
+    public Accepter getAccepter() {
+        return accepter;
     }
 
     public abstract void execute(@Nonnull MessageReceivedEvent event);

@@ -65,7 +65,7 @@ public class JSCommandService {
         }
     }
 
-    public JSBuilder<? extends JSBuilder<?>> builder(String initialContent) {
+    public JSBuilder builder(String initialContent) {
         return event != null ? new SlashReplyBuilder(initialContent) : new ReplyBuilder(initialContent);
     }
 
@@ -89,18 +89,19 @@ public class JSCommandService {
         return ephemeral;
     }
 
-    public interface JSBuilder<T extends JSBuilder<T>> {
-        T setContent(String content);
-        T appendContent(String text);
-        T plusContent(String text);
-        T addFile(String url, String ext);
-        default T setEphemeral(boolean ephemeral) {
-            return null;
+    public static abstract class JSBuilder {
+        public abstract JSBuilder setContent(String content);
+        public abstract JSBuilder appendContent(String content);
+        public abstract JSBuilder plusContent(String content);
+        abstract void embed(MessageEmbed embed);
+        public abstract JSBuilder addFile(String url, String ext);
+        public abstract void reply();
+        public JSBuilder setEphemeral(boolean value) {
+            return this;
         }
-        void reply();
     }
 
-    public class ReplyBuilder implements JSBuilder<ReplyBuilder> {
+    public class ReplyBuilder extends JSBuilder {
         public String content;
         private short fileCount = 0;
         private MessageEmbed embed = null;
@@ -128,6 +129,7 @@ public class JSCommandService {
             return this;
         }
 
+        @Override
         void embed(MessageEmbed embed) {
             this.embed = embed;
         }
@@ -184,8 +186,7 @@ public class JSCommandService {
                         reply.queue(m -> collect.forEach(f -> {
                             try {
                                 Files.delete(f.toPath());
-                            } catch (Exception ignored) {
-                            }
+                            } catch (Exception ignored) {}
                         }));
                         return;
                     }
@@ -200,9 +201,9 @@ public class JSCommandService {
         }
     }
 
-    public class SlashReplyBuilder implements JSBuilder<SlashReplyBuilder> {
+    public class SlashReplyBuilder extends JSBuilder {
         public String content;
-
+        MessageEmbed embed;
         private short fileCount = 0;
         private final Map<String, String> fileList = new HashMap<>();
 
@@ -246,6 +247,11 @@ public class JSCommandService {
         }
 
         @Override
+        void embed(MessageEmbed embed) {
+            this.embed = embed;
+        }
+
+        @Override
         public void reply() {
             if (event == null) return;
             if (replyCount > 0) throw new RuntimeException("Reply limit reached");
@@ -272,8 +278,7 @@ public class JSCommandService {
                         }
                         return null;
                     }).collect(Collectors.toList());
-                    if(!ephemeral)
-                    for (File file : collect) {
+                    if(!ephemeral) for (File file : collect) {
                         try {
                             if (file != null) {
                                 reply = reply.addFile(file, file.getName());
@@ -283,15 +288,15 @@ public class JSCommandService {
                             event.getHook().sendMessage("Exception in your code!\n" + e.getMessage())
                                     .setEphemeral(true).queue();
                         }
-                    }
-                    reply.setEphemeral(ephemeral).queue(m -> collect.forEach(f -> {
+                    }reply.setEphemeral(ephemeral).queue(m -> collect.forEach(f -> {
                         try {
                             Files.delete(f.toPath());
                         } catch (Exception ignored) {}
                     }));
                     return;
                 }
-                reply.setEphemeral(ephemeral).queue();
+                if(embed == null) reply.setEphemeral(ephemeral).queue();
+                else reply.setEphemeral(ephemeral).addEmbeds(embed).queue();
             } finally {
                 replyCount++;
             }

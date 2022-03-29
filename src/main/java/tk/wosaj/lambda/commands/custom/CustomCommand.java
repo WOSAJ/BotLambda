@@ -1,7 +1,7 @@
 package tk.wosaj.lambda.commands.custom;
 
+import tk.wosaj.lambda.util.Accepter;
 import tk.wosaj.lambda.util.JSONSerializable;
-import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 
@@ -12,7 +12,7 @@ public final class CustomCommand implements JSONSerializable {
     @Nonnull
     private String name;
     private String group = "";
-    private Strainer policy = Strainer.PUBLIC;
+    private Accepter policy = Accepter.ALL;
     private String js = "";
 
     public CustomCommand(@Nonnull String guildId, @Nonnull String name) {
@@ -59,11 +59,11 @@ public final class CustomCommand implements JSONSerializable {
         this.group = group;
     }
 
-    public Strainer getPolicy() {
+    public Accepter getPolicy() {
         return policy;
     }
 
-    public void setPolicy(Strainer policy) {
+    public void setPolicy(Accepter policy) {
         this.policy = policy;
     }
 

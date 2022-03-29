@@ -9,15 +9,15 @@ import java.time.Clock;
 @CheckReturnValue
 public class JSEmbed {
     JSEmbed() {}
-    public EmbedBuilder builder(JSCommandService.ReplyBuilder builder) {
+    public EmbedBuilder builder(JSCommandService.JSBuilder builder) {
         return new EmbedBuilder(builder);
     }
 
     public static final class EmbedBuilder {
         private net.dv8tion.jda.api.EmbedBuilder embedBuilder = new net.dv8tion.jda.api.EmbedBuilder();
-        private final JSCommandService.ReplyBuilder builder;
+        private final JSCommandService.JSBuilder builder;
 
-        private EmbedBuilder(JSCommandService.ReplyBuilder builder) {
+        private EmbedBuilder(JSCommandService.JSBuilder builder) {
             this.builder = builder;
         }
 

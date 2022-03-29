@@ -9,8 +9,8 @@ import tk.wosaj.lambda.commands.Argument;
 import tk.wosaj.lambda.commands.Command;
 import tk.wosaj.lambda.database.guild.GuildItem;
 import tk.wosaj.lambda.database.guild.GuildService;
+import tk.wosaj.lambda.util.Accepter;
 import tk.wosaj.lambda.util.GuildDataSettings;
-import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.ElementType;
@@ -34,22 +34,14 @@ public final class DisableCommand extends Command {
                 Object o = aClass.newInstance();
                 if(!(o instanceof Command)) continue;
                 alwaysEnabled.add(((Command) o).getName());
-            }catch (Exception ignored) {}
+            } catch (Exception ignored) {}
         }
     }
     public DisableCommand() {
-        super(
-                "disable",
-                "Disables command by name",
-                true,
-                Strainer.ADMIN,
-                new Argument(
-                    OptionType.STRING,
-                    "command-name",
-                    "Name of command",
-                    false
-                )
-        );
+        super("disable", "Disables command by name");
+        arguments.add(new Argument(OptionType.STRING, "command-name", "Name of command", false));
+        ephemeral = true;
+        accepter = Accepter.ADMIN;
     }
 
     @Override
@@ -60,7 +52,7 @@ public final class DisableCommand extends Command {
         String asString = splitMessage(event.getMessage().getContentRaw())[1];
 
         if(alwaysEnabled.contains(asString)) {
-            reply(event, "<:canceled:934419252495130744> Command can't disabled!");
+            reply(event, Main.emotes.get("canceled") + " Command can't disabled!");
             return;
         }
 
@@ -71,9 +63,9 @@ public final class DisableCommand extends Command {
             item.setJson(settings.toJson(false));
             service.update(item);
             Main.manager.removeCommand(event.getGuild(), asString);
-            reply(event, "<:accepted:911605951335915530> Command Successfully disabled!");
+            reply(event, Main.emotes.get("accepted") + " Command Successfully disabled!");
         }
-        reply(event, "<:canceled:934419252495130744> Can't find command!");
+        reply(event, Main.emotes.get("canceled") + " Can't find command!");
     }
 
     @Override
@@ -84,7 +76,7 @@ public final class DisableCommand extends Command {
         String asString = Objects.requireNonNull(event.getOption("command-name")).getAsString();
 
         if(alwaysEnabled.contains(asString)) {
-            reply(event, "<:canceled:934419252495130744> Command can't disabled!");
+            reply(event, Main.emotes.get("canceled") + " Command can't disabled!");
             return;
         }
 
@@ -95,10 +87,10 @@ public final class DisableCommand extends Command {
             item.setJson(settings.toJson(false));
             service.update(item);
             Main.manager.removeCommand(event.getGuild(), asString);
-            reply(event, "<:accepted:911605951335915530> Command Successfully disabled!");
+            reply(event, Main.emotes.get("accepted") + " Command Successfully disabled!");
             return;
         }
-        reply(event, "<:canceled:934419252495130744> Can't find command!");
+        reply(event, Main.emotes.get("canceled") + " Can't find command!");
     }
     
     @Target(ElementType.TYPE)

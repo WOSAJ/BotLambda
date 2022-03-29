@@ -8,7 +8,6 @@ import tk.wosaj.lambda.Main;
 import tk.wosaj.lambda.commands.Argument;
 import tk.wosaj.lambda.commands.Command;
 import tk.wosaj.lambda.util.GuildDataSettings;
-import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.Timer;
@@ -20,16 +19,8 @@ public final class JSRunCommand extends Command {
         gc = true;
     }
     public JSRunCommand() {
-        super(
-                "js",
-                "Run js command script",
-                false,
-                Strainer.ADMIN,
-                new Argument(
-                        OptionType.STRING,
-                        "script",
-                        "JS script to run",
-                        false));
+        super("js", "Run js command script");
+        arguments.add(new Argument(OptionType.STRING, "script", "JS script to run", false));
     }
 
     @Override

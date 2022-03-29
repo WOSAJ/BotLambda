@@ -5,6 +5,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 import javax.annotation.Nonnull;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
@@ -241,6 +242,18 @@ public class JSData {
 
         public void kick(String reason) {
             member.kick(reason).queue();
+        }
+
+        public void timeout(int days, int hours, int minutes, String reason) {
+            member.timeoutFor(Duration.ofDays(days).plus(Duration.ofHours(hours)).plus(Duration.ofMinutes(minutes))).reason(reason).queue();
+        }
+
+        public void timeout(int days, int hours, int minutes) {
+            timeout(days, hours, minutes, "");
+        }
+
+        public void pardon() {
+            if(member.isTimedOut()) member.removeTimeout().queue();
         }
     }
 }

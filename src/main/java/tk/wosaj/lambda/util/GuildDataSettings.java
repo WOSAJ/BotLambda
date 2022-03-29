@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import tk.wosaj.lambda.Main;
-import tk.wosaj.lambda.commands.CommandSettings;
 import tk.wosaj.lambda.database.guild.GuildService;
 
 import javax.annotation.Nonnull;
@@ -26,12 +25,10 @@ public class GuildDataSettings implements JSONSerializable {
     public final List<String> permittedUserIDs = new ArrayList<>();
     public final List<String> moderatorRolesIDs = new ArrayList<>();
     public final List<String> customCommands = new ArrayList<>();
-    public final CommandSettings commandSettings;
 
     public GuildDataSettings(@Nonnull Guild guild) {
         this.guild = guild.getId();
         this.jda = guild.getJDA();
-        commandSettings = new CommandSettings(guild);
     }
 
     @Nonnull

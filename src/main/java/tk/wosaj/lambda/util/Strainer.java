@@ -9,18 +9,17 @@ import tk.wosaj.lambda.database.guild.GuildService;
 import javax.annotation.Nonnull;
 import java.util.List;
 
-@SuppressWarnings("all")
+@Deprecated
 public enum Strainer {
     ADMIN,
     MODERATOR,
-    @Deprecated COMPLEX_ADMIN,
-    @Deprecated COMPLEX_MODERATOR,
+    COMPLEX_ADMIN,
+    COMPLEX_MODERATOR,
     PUBLIC;
     public static boolean admin(@Nonnull Member member) {
         return member.hasPermission(Permission.ADMINISTRATOR);
     }
 
-    @Deprecated
     public static boolean permitted(@Nonnull Member member) {
         GuildService service = new GuildService();
         GuildItem item = service.byId(member.getGuild().getId());
@@ -43,7 +42,6 @@ public enum Strainer {
         return GuildDataSettings.loadFromJson(item.getJson()).moderatorRolesIDs.contains(role.getId());
     }
 
-    @Deprecated
     public static boolean complexAdmin(@Nonnull Member member) {
         GuildService service = new GuildService();
         GuildItem item = service.byId(member.getGuild().getId());
@@ -52,7 +50,6 @@ public enum Strainer {
                 || settings.permittedUserIDs.contains(member.getUser().getId());
     }
 
-    @Deprecated
     public static boolean complexModerator(@Nonnull Member member) {
         GuildService service = new GuildService();
         GuildItem item = service.byId(member.getGuild().getId());

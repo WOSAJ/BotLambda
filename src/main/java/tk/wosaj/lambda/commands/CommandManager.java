@@ -18,7 +18,6 @@ import tk.wosaj.lambda.database.guild.GuildUtil;
 import tk.wosaj.lambda.util.AutoSearchable;
 import tk.wosaj.lambda.util.Exclude;
 import tk.wosaj.lambda.util.GuildDataSettings;
-import tk.wosaj.lambda.util.Strainer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -39,8 +38,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
             commands = new ArrayList<>(),
             normalCommands = new ArrayList<>(),
             defaultCommands = new ArrayList<>();
-    private final ExecutorService executor = Executors.newFixedThreadPool(32,
-            r -> {
+    private final ExecutorService executor = Executors.newFixedThreadPool(32, r -> {
                 Thread thread = new Thread(r);
                 thread.setUncaughtExceptionHandler((t, e) -> {
                     if(!(e instanceof IllegalMonitorStateException))
@@ -146,16 +144,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                                         .setEphemeral(true).queue();
                                     return;
                                 }
-                        boolean destroy = false;
-                        switch (command.getPolicy()) {
-                            case ADMIN:
-                                destroy = !Strainer.admin(event.getMember());
-                                break;
-                            case MODERATOR:
-                                destroy = !Strainer.moderator(event.getMember());
-                                break;
-                        }
-                        if(destroy) {
+                        if(command.getAccepter().check(event.getMember())) {
                             Command.reply(event, Main.emotes.get("canceled") + " You cant use it!", true);
                             return;
                         }
@@ -175,7 +164,6 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if(event.getAuthor().isBot()) return;
         if(event.getMember() == null) {
-            logger.debug("Nullable return");
             return;
         }
         executor.submit(() -> {
@@ -189,20 +177,9 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                     if (event.getMessage().getContentRaw().startsWith(prefix + command.getName())) {
                         for (String blacklistCommand : settings.blacklistCommands)
                             if (blacklistCommand.equals(command.getName())) {
-                                logger.debug("Blacklisted return");
                                 return;
                             }
-                        boolean destroy = false;
-
-                        switch (command.getPolicy()) {
-                            case ADMIN:
-                                destroy = !Strainer.admin(event.getMember());
-                                break;
-                            case MODERATOR:
-                                destroy = !Strainer.moderator(event.getMember());
-                                break;
-                        }
-                        if (destroy) {
+                        if (command.getAccepter().check(event.getMember())) {
                             Command.reply(event, Main.emotes.get("canceled") + " You cant use it!");
                             return;
                         }

@@ -23,6 +23,8 @@ import tk.wosaj.lambda.util.ResourceLoader;
 import tk.wosaj.lambda.util.StaticResourceLoader;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,12 +41,37 @@ public final class Main {
     public static final Properties serverProperties = new Properties();
     public static final ResourceLoader loader = new StaticResourceLoader(Main.class);
     public static final Map<String, String> emotes = new HashMap<>();
+    public static final PrintStream out;
+    public static final PrintStream err;
+    public static String consoleCollector = "";
+    public static volatile boolean canReadCollector = true;
 
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static final Logger logger;
 
     private Main() {}
 
     static {
+        out = System.out;
+        err = System.err;
+        System.setOut(new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) {
+                canReadCollector = false;
+                out.write(b);
+                consoleCollector += (char) b;
+                if((char) b == '\n') canReadCollector = true;
+            }
+        }));
+        System.setErr(new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) {
+                canReadCollector = false;
+                err.write(b);
+                consoleCollector += (char) b;
+                if((char) b == '\n') canReadCollector = true;
+            }
+        }));
+        logger = LoggerFactory.getLogger(Main.class);
         logger.info(System.getenv("JDBC_DATABASE_URL"));
         try {
             serverProperties.load(Main.class.getClassLoader().getResourceAsStream("properties/server.properties"));
@@ -62,8 +89,7 @@ public final class Main {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Thread botThread = new Thread() {
-            {
+        Thread botThread = new Thread() {{
                 setName("Client Thread");
             }
             private boolean loaded;
@@ -80,7 +106,7 @@ public final class Main {
                             .setMemberCachePolicy(MemberCachePolicy.ALL)
                             .build();
                     manager = new CommandManager(bot, defaultPrefix);
-                    js = new JSManager(manager);
+                    js = new JSManager();
                     bot.awaitReady();
                     status = ServerStatus.ONLINE;
                     loaded = true;

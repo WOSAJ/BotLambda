@@ -19,6 +19,7 @@ public final class Contexts implements AutoSearchable {
         for (Class<?> aClass : classes) {
             try {
                  Context context = (Context) aClass.getDeclaredConstructors()[0].newInstance();
+                 context.init();
                  contexts.add(context);
             } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 e.printStackTrace();

@@ -7,7 +7,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import tk.wosaj.lambda.Main;
-import tk.wosaj.lambda.commands.CommandManager;
 
 import javax.annotation.Nonnull;
 import java.io.InputStreamReader;
@@ -15,26 +14,7 @@ import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class JSManager extends ListenerAdapter {
-    private final CommandManager commandManager;
-
-    public JSManager(CommandManager manager) {
-        commandManager = manager;
-    }
-
-    public boolean execute(String js) {
-        Context context = Context.enter();
-        ScriptableObject scope = context.initStandardObjects();
-        try {
-            load(context, scope);
-            context.evaluateString(scope, js, null, 1, null);
-            context.close();
-        } catch (Exception ignored) {
-            return true;
-        }
-        return false;
-    }
-
-    public boolean execute(String js, Message message) {
+    public void execute(String js, Message message) {
         Context context = Context.enter();
         ScriptableObject scope = context.initStandardObjects();
 
@@ -51,12 +31,10 @@ public class JSManager extends ListenerAdapter {
             context.close();
         } catch (Exception e) {
             message.reply("Exception in your code!\n" + e.getMessage()).queue();
-            return true;
         }
-        return false;
     }
 
-    public boolean execute(String js, SlashCommandInteractionEvent event, boolean ephemeral) {
+    public void execute(String js, SlashCommandInteractionEvent event, boolean ephemeral) {
         Context context = Context.enter();
 
         //Libs
@@ -73,9 +51,7 @@ public class JSManager extends ListenerAdapter {
         } catch (Exception e) {
             event.getHook().sendMessage("Exception in your code!\n" + e.getMessage())
                     .setEphemeral(true).queue();
-            return true;
         }
-        return false;
     }
 
     private void load(@Nonnull Context context, @Nonnull Scriptable scope) throws Exception {
