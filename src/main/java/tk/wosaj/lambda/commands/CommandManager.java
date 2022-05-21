@@ -144,7 +144,7 @@ public class CommandManager extends ListenerAdapter implements AutoSearchable {
                                         .setEphemeral(true).queue();
                                     return;
                                 }
-                        if(command.getAccepter().check(event.getMember())) {
+                        if(!command.getAccepter().check(event.getMember())) {
                             Command.reply(event, Main.emotes.get("canceled") + " You cant use it!", true);
                             return;
                         }

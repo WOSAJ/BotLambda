@@ -23,6 +23,8 @@ public class JSManager extends ListenerAdapter {
         ScriptableObject.putConstProperty(scope, "guild", new JSData.JSGuild(message.getGuild()));
         ScriptableObject.putConstProperty(scope, "bot", new JSData.JSUser(Main.bot.getSelfUser()));
         ScriptableObject.putConstProperty(scope, "embed", new JSEmbed());
+        ScriptableObject.putConstProperty(scope, "planner", new JSActionPlanner());
+
 
 
         try {
@@ -43,6 +45,7 @@ public class JSManager extends ListenerAdapter {
         ScriptableObject.putConstProperty(scope, "guild", new JSData.JSGuild(
                 Objects.requireNonNull(event.getGuild())));
         ScriptableObject.putConstProperty(scope, "embed", new JSEmbed());
+        ScriptableObject.putConstProperty(scope, "planner", new JSActionPlanner());
 
         try {
             load(context, scope);
